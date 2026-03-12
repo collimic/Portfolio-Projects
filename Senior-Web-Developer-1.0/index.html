@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architect Builder v1.7</title>
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --bg-gradient: radial-gradient(circle at top center, #1e293b 0%, #020617 100%);
+            --card-bg: rgba(15, 23, 42, 0.7);
+            --accent-main: #0ea5e9;
+            --accent-glow: #00d2ff;
+            --text-main: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border-glass: rgba(51, 65, 85, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background: rgba(2, 6, 23, 0.8);
+            backdrop-filter: blur(12px);
+            padding: 1rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-glass);
+            position: sticky; top: 0; z-index: 100;
+        }
+
+        .logo { font-weight: 900; letter-spacing: 0.2em; background: linear-gradient(to right, var(--accent-main), #9d50bb); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .version-tag { font-size: 0.7rem; background: rgba(14, 165, 233, 0.15); color: var(--accent-glow); padding: 0.25rem 0.75rem; border-radius: 20px; border: 1px solid var(--accent-main); cursor: pointer; }
+
+        main { flex-grow: 1; padding: 2rem; display: grid; grid-template-columns: 300px 1fr; gap: 2rem; }
+        .sidebar { background: var(--card-bg); backdrop-filter: blur(10px); border-radius: 16px; border: 1px solid var(--border-glass); padding: 1.5rem; height: fit-content; }
+        .stage { background: rgba(0,0,0,0.3); border-radius: 16px; border: 2px dashed var(--border-glass); display: flex; flex-direction: column; align-items: center; min-height: 500px; padding: 20px; }
+        
+        .btn { background: var(--accent-main); color: white; border: none; padding: 0.75rem 1rem; border-radius: 8px; cursor: pointer; width: 100%; margin-bottom: 1rem; font-weight: 600; }
+        
+        .component-item { width: 90%; margin: 10px 0; padding: 20px; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--accent-main); color: var(--text-main); cursor: text; }
+
+        footer { padding: 2rem 4rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.65rem; color: var(--text-dim); border-top: 1px solid var(--border-glass); text-transform: uppercase; }
+        .footer-creds { font-weight: 800; color: var(--accent-main); display: flex; gap: 2rem; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); display: none; place-content: center; z-index: 1000; }
+        .modal-overlay.open { display: grid; }
+        .changelog-panel { width: 600px; max-height: 80vh; border: 1px solid var(--accent-main); background: var(--bg-dark); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
+        .log-content { padding: 1.5rem; overflow-y: auto; font-family: monospace; color: var(--text-main); font-size: 0.85rem; }
+        
+        #import-input { display: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">ARCHITECT // BUILDER</div>
+        <button class="version-tag" id="changelogBtn">v1.7</button>
+    </header>
+
+    <main>
+        <aside class="sidebar">
+            <h3>Components</h3>
+            <button class="btn" onclick="addComponent('hero')">+ Hero Section</button>
+            <button class="btn" onclick="addComponent('card')">+ Feature Card</button>
+            <button class="btn" onclick="addComponent('gallery')">+ Photo Gallery</button>
+            <hr style="border: 0.5px solid var(--border-glass); margin: 1.5rem 0;">
+            <button class="btn" style="background: #10b981;" onclick="exportData()">Save Project (JSON)</button>
+            <button class="btn" style="background: #6366f1;" onclick="triggerImport()">Load Project</button>
+            <button class="btn" style="background: #f59e0b; color: #000;" onclick="translateToHTML()">Generate Web Page</button>
+            <input type="file" id="import-input" accept=".json" onchange="importData(event)">
+        </aside>
+
+        <section class="stage" id="stage">
+            <p id="placeholder-text" style="color: var(--text-dim);">Select a component or Load a project.</p>
+        </section>
+    </main>
+
+    <div class="modal-overlay" id="changelogModal">
+        <div class="changelog-panel">
+            <header style="padding:1rem; border-bottom:1px solid var(--border-glass); display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0; color:var(--accent-main);">SYSTEM LOG_</h3>
+                <span id="closeLog" style="cursor:pointer; font-size:1.5rem;">&times;</span>
+            </header>
+            <div class="log-content"><pre id="logText">
+### V1.7 STABILITY PATCH
+* Encoded Web Page Template (Base64) to fix code leakage.
+* Restored button and footer interactivity.
+* Added Photo Gallery module for UAS flight logs.
+            </pre></div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-identity">&copy; 2026 MICHAEL J COLLINS | ADJUNCT PROFESSOR | CTE INFORMATION TECHNOLOGY SPECIALIST</div>
+        <div class="footer-creds">
+            <span>CIOS (A+/NET+ CE)</span><span>A+ GFL</span><span>ITF+</span><span>FAA PART 107</span><span>CA CTE (FAB, ITEC, S17C)</span>
+        </div>
+    </footer>
+
+    <script>
+        const stage = document.getElementById('stage');
+        const logText = document.getElementById('logText');
+        const changelogBtn = document.getElementById('changelogBtn');
+        const changelogModal = document.getElementById('changelogModal');
+        const closeLog = document.getElementById('closeLog');
+
+        function addComponent(type, content = null) {
+            const placeholder = document.getElementById('placeholder-text');
+            if (placeholder) placeholder.remove();
+            const div = document.createElement('div');
+            div.className = "component-item";
+            div.setAttribute('data-type', type);
+            div.setAttribute('contenteditable', 'true');
+            div.innerText = content || "[ " + type.toUpperCase() + " MODULE LOADED ]";
+            stage.appendChild(div);
+        }
+
+        function exportData() {
+            const items = Array.from(stage.children).map(child => ({
+                type: child.getAttribute('data-type'),
+                content: child.innerText
+            }));
+            if (items.length === 0) return alert("No components to save.");
+            const projectData = { layout: items, author: "Michael J. Collins", timestamp: new Date().toISOString() };
+            const blob = new Blob([JSON.stringify(projectData, null, 2)], {type: 'application/json'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'architect-project.json';
+            a.click();
+            logText.innerText += "\n### ACTION: PROJECT SAVED";
+        }
+
+        function translateToHTML() {
+            if (stage.children.length === 0 || stage.querySelector('#placeholder-text')) return alert("Add components first.");
+            
+            // Encoded HTML Parts to prevent leakage
+            const partA = "PCFET0NUWVBFIGh0bWw+PGh0bWw+PGhlYWQ+PG1ldGEgY2hhcnNldD0iVVRGLTgiPjxzdHlsZT5ib2R5e2JhY2tncm91bmQ6IzAyMDYxNztjb2xvcjojZjFmNWY5O2ZvbnQtZmFtaWx5OnNhbnMtc2VyaWY7cGFkZGluZzoycmVtO21hcmdpbjowO30ubW9kdWxle3BhZGRpbmc6MnJlbTttYXJnaW4tYm90dG9tOjEuNXJlbTtib3JkZXI6MXB4IHNvbGlkICMwZWE1ZTk7Ym9yZGVyLXJhZGl1czoxMnB4O2JhY2tncm91bmQ6cmdiYSgxNSwyMyw0MiwwLjcpO30uYmFkZ2Vze2NvbG9yOiMwZWE1ZTk7Zm9udC13ZWlnaHQ6ODAwO31mb290ZXJ7bWFyZ2luLXRvcDo0cmVtO3BhZGRpbmctdG9wOjJyZW07Ym9yZGVyLXRvcDoxcHggc29saWQgIzMzNDE1NTtkaXNwbGF5OmZsZXg7anVzdGlmeS1jb250ZW50OnNwYWNlLWJldHdlZW47Zm9udC1zaXplOjAuNzVyZW07Y29sb3I6Izk0YTMzODt0ZXh0LXRyYW5zZm9ybTp1cHBlcmNhc2U7fTwvc3R5bGU+PC9oZWFkPjxib2R5Pg==";
+            const partB = "PGZvb3Rlcj48ZGl2PiZjb3B5OyAyMDI2IE1JQ0hBRUwgSiBDT0xMSU5TIHwgQURKVU5DVCBQUk9GRVNTT1I8L2Rpdj48ZGl2IGNsYXNzPSJiYWRnZXMiPkNJT1MgfCBBKyB8IE5FVCsgfCBQQVJUIDEwNzwvZGl2PjwvZm9vdGVyPjwvYm9keT48L2h0bWw+";
+
+            let coreHtml = "";
+            Array.from(stage.children).forEach(child => {
+                coreHtml += `<div class="module">${child.innerText}</div>`;
+            });
+
+            const finalDoc = atob(partA) + coreHtml + atob(partB);
+            const blob = new Blob([finalDoc], {type: 'text/html'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'architect-webpage.html';
+            a.click();
+            logText.innerText += "\n### ACTION: WEB PAGE GENERATED";
+        }
+
+        function triggerImport() { document.getElementById('import-input').click(); }
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = JSON.parse(e.target.result);
+                stage.innerHTML = '';
+                data.layout.forEach(item => addComponent(item.type, item.content));
+                logText.innerText += "\n### ACTION: PROJECT LOADED";
+            };
+            reader.readAsText(file);
+        }
+
+        changelogBtn.onclick = () => changelogModal.classList.add('open');
+        closeLog.onclick = () => changelogModal.classList.remove('open');
+    </script>
+</body>
+</html>
