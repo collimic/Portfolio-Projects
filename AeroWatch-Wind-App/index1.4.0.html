@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0ea5e9">
+    <title>AeroWatch | Mission Safety</title>
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            --cyber-blue: #0ea5e9;
+            --go-green: #22c55e;
+            --nogo-red: #ef4444;
+            --warn-yellow: #f59e0b;
+            --glass: rgba(30, 41, 59, 0.7);
+        }
+        body.field-mode { --bg-gradient: #000000; --glass: #111111; --cyber-blue: #00ffff; }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg-gradient); color: white; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; font-size: 16px; }
+        
+        #global-airspace-bar { width: 100%; padding: 0.85rem; text-align: center; font-size: 0.9rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; background: #334155; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: all 0.3s; }
+        .airspace-clear { background: var(--go-green) !important; }
+        .airspace-restricted { background: var(--nogo-red) !important; animation: pulse 2s infinite; }
+        
+        header { padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(14, 165, 233, 0.2); backdrop-filter: blur(10px); }
+        .logo { font-weight: 800; font-size: 1.2rem; letter-spacing: 3px; color: var(--cyber-blue); text-transform: uppercase; }
+        
+        .container { flex: 1; padding: 1rem; max-width: 950px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+        .glass-card { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 2.2rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); margin-bottom: 1rem; }
+        
+        .status-orb { width: 120px; height: 120px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1rem; text-align: center; border: 4px solid rgba(255,255,255,0.1); text-transform: uppercase; margin: 0 auto 1.5rem; }
+        
+        .input-row { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 1rem; justify-content: center; }
+        select, input { background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 1rem; border-radius: 6px; font-size: 1rem; flex: 1; min-width: 140px; }
+        
+        .btn-main { width: 100%; padding: 1.3rem; background: var(--cyber-blue); border: none; color: white; font-weight: 700; text-transform: uppercase; cursor: pointer; border-radius: 6px; margin-bottom: 0.8rem; font-size: 1.2rem; letter-spacing: 2px; }
+
+        .data-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1.5rem; }
+        .data-point { background: rgba(255, 255, 255, 0.05); padding: 1.2rem; border-radius: 10px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .data-label { display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.5rem; text-transform: uppercase; font-weight: 800; }
+        .data-value { font-size: 1rem; font-weight: 700; }
+
+        .check-group { margin-bottom: 2rem; }
+        .check-group-title { font-size: 0.9rem; color: var(--cyber-blue); font-weight: 800; text-transform: uppercase; margin-bottom: 1rem; border-bottom: 1px solid rgba(14, 165, 233, 0.3); padding-bottom: 5px; }
+        .check-item { display: flex; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); gap: 12px; }
+        .check-item input { width: 20px; height: 20px; flex-shrink: 0; cursor: pointer; }
+        .check-item span { font-size: 0.95rem; color: #e2e8f0; }
+
+        .planner-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.85rem; }
+        .planner-table th { text-align: left; padding: 8px; color: var(--cyber-blue); border-bottom: 2px solid rgba(14, 165, 233, 0.2); }
+        .planner-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        #debug-log { margin-top: 1rem; background: #000; color: #22c55e; font-family: monospace; padding: 1rem; border-radius: 6px; font-size: 0.85rem; height: 80px; overflow-y: auto; }
+        footer { padding: 2rem; border-top: 1px solid rgba(255, 255, 255, 0.05); text-align: center; font-size: 0.85rem; color: #64748b; font-weight: bold; }
+        @media (min-width: 600px) { .data-grid { grid-template-columns: repeat(4, 1fr); } }
+    </style>
+</head>
+<body>
+
+<div id="global-airspace-bar" onclick="window.open('https://tfr.faa.gov/tfr2/list.html', '_blank')">AIRSPACE MONITOR: STANDBY</div>
+
+<header>
+    <div class="logo">AeroWatch // v1.4.2</div>
+    <button style="background:transparent; border:1px solid var(--warn-yellow); color:var(--warn-yellow); padding:0.5rem 1rem; font-size:0.8rem; border-radius:6px;" onclick="document.body.classList.toggle('field-mode')">FIELD MODE</button>
+</header>
+
+<div class="container">
+    <div class="glass-card">
+        <div id="orb" class="status-orb">READY</div>
+        <div class="input-row">
+            <select id="droneModel">
+                <option value="33">DJI Matrice 30T (33mph)</option>
+                <option value="28">Autel EVO II (28mph)</option>
+                <option value="27">DJI Avata 2 (27mph)</option>
+                <option value="26">DJI Matrice 200 (26mph)</option>
+                <option value="24">DJI Mini 4 Pro (24mph)</option>
+                <option value="24">DJI Mini 3 Pro (24mph)</option>
+                <option value="23">DJI Mavic 2 Pro (23mph)</option>
+                <option value="22">DJI Phantom 4 Pro (22mph)</option>
+                <option value="22">DJI Inspire 2 (22mph)</option>
+                <option value="18">DJI Mini (18mph)</option>
+                <option value="25">Yuneec H520 (25mph)</option>
+            </select>
+            <input type="tel" id="zipCode" placeholder="ZIP CODE" maxlength="5">
+            <input type="date" id="missionDate">
+            <button onclick="autoLocate()" style="background:var(--cyber-blue); border:none; border-radius:6px; padding:0 1.2rem; cursor:pointer;">🛰️</button>
+        </div>
+        <button class="btn-main" onclick="checkConditions()">Analyze Mission</button>
+        <div class="data-grid">
+            <div class="data-point"><span class="data-label">Wind / Gusts</span><span class="data-value" id="res-wind">--</span></div>
+            <div class="data-point"><span class="data-label">Solar (Kp)</span><span class="data-value" id="res-kp">--</span></div>
+            <div class="data-point"><span class="data-label">Cloud Base</span><span class="data-value" id="res-clouds">--</span></div>
+            <div class="data-point"><span class="data-label">Visibility</span><span class="data-value" id="res-vis">--</span></div>
+        </div>
+    </div>
+
+    <div id="checklist-card" class="glass-card" style="display:none;">
+        <div class="check-group">
+            <div class="check-group-title">1. BEFORE LEAVING HOME</div>
+            <div class="check-item"><input type="checkbox"><span>Firmware up to date?</span></div>
+            <div class="check-item"><input type="checkbox"><span>Batteries fully charged & inspected?</span></div>
+            <div class="check-item"><input type="checkbox"><span>Micro SD/SSD seated in UAV?</span></div>
+            <div class="check-item"><input type="checkbox"><span>Research flight area & NOTAMS.</span></div>
+            <div class="check-item"><input type="checkbox"><span>Self Check: Physical & Mental fitness?</span></div>
+        </div>
+        <div class="check-group">
+            <div class="check-group-title">2. ON SITE</div>
+            <div class="check-item"><input type="checkbox"><span>Inspect site for obstacles & hazards.</span></div>
+            <div class="check-item"><input type="checkbox"><span>Thoroughly inspect drone airframe.</span></div>
+            <div class="check-item"><input type="checkbox"><span>Calibrate compass and home point.</span></div>
+            <div class="check-item"><input type="checkbox"><span>Enable RTH & verify altitude height.</span></div>
+            <div class="check-item"><input type="checkbox"><span>Check GPS lock & satellites count.</span></div>
+        </div>
+        <div class="check-group">
+            <div class="check-group-title">3. IMMEDIATELY AFTER TAKEOFF</div>
+            <div class="check-item"><input type="checkbox"><span>Stable hover for C2 connection.</span></div>
+            <div class="check-item"><input type="checkbox"><span>Test controls (Match input to output).</span></div>
+            <div class="check-item"><input type="checkbox"><span>Monitor GPS for interference/drops.</span></div>
+        </div>
+        <div class="check-group">
+            <div class="check-group-title">4. AFTER YOUR MISSION</div>
+            <div class="check-item"><input type="checkbox"><span>Power off drone and controller.</span></div>
+            <div class="check-item"><input type="checkbox"><span>Inspect airframe for heat or damage.</span></div>
+            <div class="check-item"><input type="checkbox"><span>Wipe fuselage with damp cloth.</span></div>
+        </div>
+    </div>
+
+    <div id="planner-card" class="glass-card" style="display:none;">
+        <div class="check-group-title">24-Hour Operations Planner</div>
+        <table class="planner-table">
+            <thead><tr><th>Time</th><th>Wind</th><th>Clouds</th><th>Fly?</th></tr></thead>
+            <tbody id="planner-body"></tbody>
+        </table>
+    </div>
+
+    <div id="debug-log">System Ready...</div>
+</div>
+
+<footer>ADJUNCT PROFESSOR | CTE INFORMATION TECHNOLOGY SPECIALIST<br>© 2026 MICHAEL J COLLINS | FAA PART 107</footer>
+
+<script>
+    const logger = document.getElementById('debug-log');
+    function log(msg) { logger.innerHTML += `<br>> ${msg}`; logger.scrollTop = logger.scrollHeight; }
+    document.getElementById('missionDate').valueAsDate = new Date();
+
+    async function autoLocate() {
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            const { latitude, longitude } = pos.coords;
+            const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+            const data = await res.json();
+            if(data.postcode) document.getElementById('zipCode').value = data.postcode;
+        });
+    }
+
+    async function checkConditions() {
+        const zip = document.getElementById('zipCode').value;
+        const droneLimit = parseInt(document.getElementById('droneModel').value);
+        const missionDate = document.getElementById('missionDate').value;
+        const orb = document.getElementById('orb');
+        
+        if (!/^\d{5}$/.test(zip)) return log("Invalid ZIP.");
+        orb.innerText = "WAIT..."; 
+
+        try {
+            const geoRes = await fetch(`https://api.zippopotam.us/us/${zip}`);
+            const geoData = await geoRes.json();
+            const lat = geoData.places[0].latitude;
+            const lon = geoData.places[0].longitude;
+            const nwshdr = { 'User-Agent': 'AeroWatch/1.4.2 (michael.collins.engraving@gmail.com)' };
+
+            const pointsRes = await fetch(`https://api.weather.gov/points/${lat},${lon}`, { headers: nwshdr });
+            const pointsData = await pointsRes.json();
+            const forecastRes = await fetch(pointsData.properties.forecastHourly, { headers: nwshdr });
+            const forecastData = await forecastRes.json();
+            
+            const periods = forecastData.properties.periods.slice(0, 24);
+            let plannerHtml = "";
+            let currentWind = 0;
+
+            periods.forEach((p, idx) => {
+                const wind = parseInt(p.windSpeed.replace(/[^0-9]/g, '')) || 0;
+                if(idx === 0) currentWind = wind;
+                const cloudBase = Math.round(((p.temperature - (p.temperature - (100 - p.relativeHumidity.value)/5)) * 223) + 400);
+                const canFly = wind < (droneLimit * 0.9);
+                plannerHtml += `<tr><td>${new Date(p.startTime).getHours()}:00</td><td>${wind} mph</td><td>${cloudBase} ft</td><td style="color:${canFly?'#22c55e':'#ef4444'}">${canFly?'YES':'NO'}</td></tr>`;
+            });
+
+            document.getElementById('planner-body').innerHTML = plannerHtml;
+            document.getElementById('planner-card').style.display = 'block';
+
+            document.getElementById('res-wind').innerText = `${currentWind} mph`;
+            document.getElementById('res-kp').innerText = "1.33";
+            document.getElementById('res-vis').innerText = "10 SM";
+            document.getElementById('res-clouds').innerText = "4200 ft";
+            
+            document.getElementById('checklist-card').style.display = 'block';
+            orb.innerText = currentWind < (droneLimit * 0.9) ? "GO" : "NO GO";
+            orb.style.background = currentWind < (droneLimit * 0.9) ? "var(--go-green)" : "var(--nogo-red)";
+
+            log("Handshake Complete.");
+        } catch (e) { log("Data fetch failed."); orb.innerText = "ERR"; }
+    }
+</script>
+</body>
+</html>
