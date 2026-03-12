@@ -1,0 +1,17 @@
+{
+  "name": "The Few-Shot Architect: Master v6.6",
+  "short_name": "Architect v6.6",
+  "description": "Master-grade prompt engineering with Logic, Lyrics, and Grounding Scoring.",
+  "start_url": "./index6.html",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
